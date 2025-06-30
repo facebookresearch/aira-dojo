@@ -1,0 +1,88 @@
+defaults:
+  - /solver/client@crossover.llm.client: litellm_4o
+  
+crossover:
+  _target_: dojo.config_dataclasses.operators.base.OperatorConfig
+  llm:
+    _target_: dojo.config_dataclasses.llm.generic_llm.GenericLLMConfig
+    client: ???
+    generation_kwargs: {}
+  system_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |
+      # Introduction:
+      You are a Kaggle Grandmaster attending a high-stakes competition.
+      Your goal is to combine two previously developed solutions to further increase performance on the given task.
+      Carefully consider the task description, the two provided solutions, the available data, and compute resources.
+      You need to devise a plan to merge or integrate these solutions and then implement it.
+
+      # TASK DESCRIPTION
+      ```
+      {{task_desc}}
+      ```
+
+      {% if memory %}
+      # PREVIOUSLY EXPLORED CROSSOVER/COMBINATION IDEAS
+      ```markdown
+      {{memory}}
+      ```
+      {% endif %}
+
+      # PREVIOUS SOLUTION 1:
+      ## Code:
+      ```python
+      {{prev_code1}}
+      ```
+
+      # PREVIOUS SOLUTION 2:
+      ## Code:
+      ```python
+      {{prev_code2}}
+      ```
+
+      # INSTRUCTIONS:
+
+      Your main task is to:
+      1. Propose a **Crossover Plan** in natural language explaining how to combine Solution 1 and Solution 2.
+      2. Provide a **Python Code Implementation** of this plan.
+
+      Consider any previously explored ideas from the MEMORY section.
+      Brainstorm how the two provided solutions can be effectively combined and **WHY THIS CROSSOVER IS LIKELY TO BE EFFECTIVE** and increase performance for the given task, data, and compute resources.
+      Aim for a consistent evaluation method (e.g., 5-FOLD CROSS-VALIDATION, unless the task specifics dictate otherwise).
+
+      **CONSTRAINTS**:
+        - Be aware of the running time of the solution, it should complete within {{execution_timeout}}
+        - Prefer vectorized operations over Python loops when processing large datasets.  
+        - Use `torch.optim.AdamW` (the recommended optimizer) instead of the deprecated `AdamW` from `transformers`.  
+        - Replace the deprecated `early_stopping_rounds` argument in `lightgbm.train()` with the `lightgbm.early_stopping(stopping_rounds=…)` callback.
+        - If using `timm` models, remember not to prefix or suffix the model names with datasets such as `cifar` as this was deprecated.
+        - As much as possible, keep the stdout clean.
+
+      **DATA**: The data is already prepared and available in the read-only `./data` directory. You should not unzip any files.
+
+      **COMPUTE**: You have access to a Python environment with 1 NVIDIA H200 GPU(s) and 24 CPUs available, and the following packages installed: {{packages}}. If you need to, feel free to use additional libraries that fit the problem.
+
+      Start by making sure you understand the task, the provided solutions, the data and compute resources, and your proposed crossover idea. Then, generate a detailed internal implementation plan that will structure and guide you step-by-step through the implementation process. Make sure to reflect on the plan to ensure that the implementation is efficient, faithful to the crossover idea, and that all requirements (e.g., the evaluation score is printed, the submission file follows the correct format and is saved in the correct location, etc.) are satisfied.
+
+      **RESPONSE FORMAT FOR IMPLEMENTATION**: 
+      Provide a **SINGLE** Markdown code block (wrapped in ```) containing a **SELF-CONTAINED** Python script that:
+      1. Implements the idea **END-TO-END**
+      2. **PRINTS THE 5-FOLD CROSS-VALIDATION** score of the evaluation metric
+      3. **SAVES THE TEST PREDICTIONS** in a `submission.csv` file in the current directory
+      
+      Format the proposed solution as follows:
+
+      # Crossover Plan
+      <Your proposed crossover plan/strategy>
+
+      ```python
+      <the implementation of the crossover solution>
+      ```
+
+    input_variables:
+      - task_desc
+      - execution_timeout
+      - packages
+      - prev_code1
+      - prev_code2
+      - memory

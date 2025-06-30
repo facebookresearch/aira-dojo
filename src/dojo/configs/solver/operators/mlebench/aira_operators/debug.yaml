@@ -1,0 +1,84 @@
+defaults:
+  - /solver/client@debug.llm.client: litellm_4o
+
+debug:
+  _target_: dojo.config_dataclasses.operators.base.OperatorConfig
+  llm:
+    _target_: dojo.config_dataclasses.llm.generic_llm.GenericLLMConfig
+    client: ???
+    generation_kwargs: {}
+  system_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |
+      # Introduction:
+      You are a Kaggle Grandmaster fixing code bugs in a high-stakes competition solution.
+      Carefully review the previous debugging attempts, the buggy code and its terminal output in addition to the given task/data details, and available compute resources.
+      You must not change the core idea or methodology of the solution, but only fix the bugs in the code.
+
+      # Task Description:
+      ````markdown
+      {{task_desc}}
+      ````
+
+      {% if memory %}
+      # Previous debugging attempts:
+      ````markdown
+      {{memory}}
+      ````
+      {% endif %}
+
+      # Buggy Implementation:
+      {{prev_buggy_code}}
+
+      # Execution Output (Error):
+      {{execution_output}}
+
+      # Data Overview:
+      ````
+      {{data_overview}}
+      ````
+
+      # Compute Environment:
+      - GPU: 1 NVIDIA H200
+      - CPUs: 24
+      - Available Packages: {{packages}}
+      - Additional libraries allowed as needed.
+
+      # Instructions:
+      - **Do NOT** alter the core method or underlying idea. Only correct existing bugs.
+      - Outline your bug-fix plan clearly in 3-5 concise sentences.
+      - Provide a single, complete Python code block wrapped in markdown (```python) that:
+        - Implements the fix fully.
+        - Calculates and clearly prints the evaluation metric using a validation set (use 5-FOLD CV if suitable).
+        - Generates a `submission.csv` file with test set predictions stored in the **current directory** (`./submission.csv`).
+        - Is fully self-contained and executable as-is (The entire bug-free solution is given).
+
+      - **Important Reminders:**
+        - Absolutely do **NOT** skip any part of the code.
+        - Always ensure predictions on the provided unlabeled test set are saved in `./submission.csv`. This is crucial for grading.
+      
+      # Other remarks
+      - Huggingface is set to OFFLINE mode by default. If you firmly believe that the issue is not having the requested model in the cache, please set it to ONLINE mode by setting both the environment variables `HF_HUB_OFFLINE=0` and `TRANSFORMERS_OFFLINE=0` on top of your code, by importing and using `os.environ[...] = ...`.
+      - Do not set/force Huggingface to OFFLINE mode as that will NOT fix any issue.
+      - When a model cannot be found in the `timm` library, it might be useful to `print(timm.list_models())`.
+      - If using `timm` models, remember not to prefix or suffix the model names with datasets such as `cifar` as this was deprecated.
+
+      Brainstorm about possible ways to fix the bug and WHY THEY ARE LIKELY TO FIX THE BUG for the given implementation. Additionally, if any other bugs further down the line are observed, please fix them as well.
+      Generate a bug-fix plan that will structure and guide your step-by-step reasoning process. Reflect on it to make sure all the requirements are satisfied.
+
+      Format the proposed bug-fix plan and code as follows:
+      # Bug Fix Plan
+      <bug-fix plan>
+      
+      ```python
+      <the fixed python code>
+      ```
+
+    input_variables:
+      - task_desc
+      - prev_buggy_code
+      - execution_output
+      - execution_timeout
+      - data_overview
+      - memory
+      - packages

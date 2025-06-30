@@ -1,0 +1,122 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+Bootstrap: docker
+From: nvidia/cuda:12.4.1-base-ubuntu22.04
+
+%labels
+    Maintainer "Karen Hambardzumyan <mahnerak@meta.com>"
+    Description "An (maximal / minimal ) apptainer image for AI Agents"
+
+%environment
+    # Set any permanent environment variables here
+    export HOME=/root
+    export CONDAHOME=/opt/conda
+    export PATH=$CONDAHOME/bin:$PATH
+    export TQDM_DISABLE=1
+    export PYTHONWARNINGS="ignore"
+
+%files
+    build-openssh.sh /opt/build-openssh.sh
+    entrypoint.sh /opt/entrypoint.sh
+    pip.requirements.txt /opt/pip.requirements.txt
+
+%post
+    set -x  # Enable debugging output
+    # Install basic packages
+    apt-get update && \
+    apt-get install -y \
+        wget zsh vim tmux htop git \
+        build-essential \
+        openssl \
+        libssl-dev \
+        libpam0g-dev \
+        libwrap0-dev \
+        libselinux1-dev \
+        pkg-config \
+        --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    echo "Basic packages installed"
+    # Set environment variables for build phase
+    export HOME=/root
+    export CONDAHOME=/opt/conda
+    mkdir -p "$HOME/.ssh"
+    # Install Miniforge (conda) and create environment
+    wget -P /tmp "https://github.com/conda-forge/miniforge/releases/download/25.1.1-0/Miniforge3-25.1.1-0-Linux-x86_64.sh" && \
+    bash /tmp/Miniforge3-25.1.1-0-Linux-x86_64.sh -b -p "$CONDAHOME" && \
+    rm /tmp/Miniforge3-25.1.1-0-Linux-x86_64.sh && \
+    echo "Miniforge installed"
+    # Ensure conda/mamba commands are accessible
+    export PATH="$CONDAHOME/bin:$PATH" && \
+    echo "PATH set"
+
+    # Install PyTorch + CUDA (12.4) plus common Python packages
+    mamba install -q -c pytorch -c nvidia -y \
+        pytorch \
+        pytorch-cuda=12.4 \
+        cuda-toolkit=12.4
+
+    mamba install -y xorg-libx11
+
+    mamba install -c pytorch -c nvidia -c conda-forge faiss-gpu -y
+    mamba install -c rapidsai -c conda-forge -c nvidia rapids=25.02
+    mamba install -c conda-forge implicit implicit-proc=*=gpu
+
+    pip install -U pip && \
+    pip install \
+        jupyter \
+        ipython \
+        jupyterlab \
+        matplotlib \
+        pandas \
+        scikit-learn \
+        seaborn \
+        transformers \
+        jupyter-kernel-gateway
+
+    pip install -r /opt/pip.requirements.txt
+
+    # -----------------------------------------------------
+    # 4. Build / configure OpenSSH inside the container
+    #    (Copies and runs your script)
+    # -----------------------------------------------------
+
+    mkdir -p /custom
+    cd /custom
+    bash /opt/build-openssh.sh
+    cd /root
+
+    # -----------------------------------------------------
+    # 5. Generate SSH keys and configure sshd
+    # -----------------------------------------------------
+    mkdir -p $HOME/.ssh
+    ssh-keygen -t rsa -N "" -f "$HOME/.ssh/id_rsa" && \
+    cat "$HOME/.ssh/id_rsa.pub" >> "$HOME/.ssh/authorized_keys" && \
+    chmod 600 "$HOME/.ssh/authorized_keys"
+
+    # Update sshd_config
+    echo > /etc/sshd_config
+    echo "UsePrivilegeSeparation no" >> /etc/sshd_config
+    echo "Port 17022" >> /etc/sshd_config
+    echo "PidFile /tmp/sshd.pid" >> /etc/sshd_config
+    echo "AuthorizedKeysFile .ssh/authorized_keys" >> /etc/sshd_config
+    echo "PasswordAuthentication no" >> /etc/sshd_config
+    echo "HostKey $HOME/.ssh/id_rsa" >> /etc/sshd_config
+    echo "PermitRootLogin yes" >> /etc/sshd_config
+
+    mkdir -p /inputs
+    mkdir -p /outputs
+
+    # # Make entrypoint script executable
+    chmod +x /opt/entrypoint.sh
+
+# %runscript
+#     # This is what runs when you do: apptainer run container.sif
+#     exec /bin/bash /opt/entrypoint.sh
+
+# %startscript
+#     # This is what runs when you do: apptainer start container.sif
+#     exec /bin/bash /opt/entrypoint.sh
