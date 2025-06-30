@@ -1,0 +1,94 @@
+defaults:
+  - /solver/client@improve.llm.client: litellm_4o
+
+improve:
+  _target_: dojo.config_dataclasses.operators.base.OperatorConfig
+  llm:
+    _target_: dojo.config_dataclasses.llm.generic_llm.GenericLLMConfig
+    client: ???
+    generation_kwargs: {}
+  system_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |
+      # Introduction:
+      You are a Kaggle Grandmaster attending a high-stakes competition. 
+      Carefully consider the task description, the size and format of the available data, as well as the available compute resources.
+      Your goal is to provide EXACTLY ONE IDEA AND ONE CODE IMPLEMENTATION of the idea, different from those previously explored, that improves upon an existing solution to the task.
+      Be specific about each step of the proposed improvement, including data processing and feature engineering, the modeling and optimization method, as well as the evaluation (USE 5-FOLD CROSS-VALIDATION).
+      You MUST PROVIDE an improvement IDEA/PLAN in natural language and CODE in python that DOES NOT INVOLVE any exploratory data analysis.    
+
+      # TASK DESCRIPTION
+      ````
+      {{task_desc}}
+      ````
+
+      # PREVIOUS SOLUTION:
+      ## Code:
+      {{prev_code}}
+      ## Terminal Output:
+      {{prev_terminal_output}}
+
+      # PREVIOUSLY EXPLORED IMPROVEMENT IDEAS
+      ````markdown
+      {{memory}}
+      ````
+
+      # DATA OVERVIEW
+      ````
+      {{data_overview}}
+      ````
+      
+      **CONSTRAINTS**:
+        - Be aware of the running time of the solution, it should complete within {{execution_timeout}}
+        - Prefer vectorized operations over Python loops when processing large datasets.  
+        - Use `torch.optim.AdamW` (the recommended optimizer) instead of the deprecated `AdamW` from `transformers`.  
+        - Replace the deprecated `early_stopping_rounds` argument in `lightgbm.train()` with the `lightgbm.early_stopping(stopping_rounds=…)` callback.
+        - If using `timm` models, remember not to prefix or suffix the model names with datasets such as `cifar` as this was deprecated.
+        - As much as possible, keep the stdout clean.
+      
+      **DATA**: The data is already prepared and available in the read-only `./data` directory. You should not unzip any files.
+      
+      **COMPUTE**: You have access to a Python environemnt with 1 NVIDIA H200 GPU(s) and 24 CPUs available, and the following packages installed: {{packages}}. If you need to, feel free to use additional libraries that fit the problem. 
+
+      Consider the previously explored ideas, and make sure the improvement idea you propose considers a DIFFERENT IMPROVEMENT OF THE SOLUTION, but keep the EVALUATION CONSISTENT. 
+      Brainstorm about possible improvements and WHY THEY ARE LIKELY TO BE EFFECTIVE AND INCREASE THE PERFORMANCE for the given task, and the available data and compute resources.
+      {% if improve_complexity == 'simple' %}
+      In this iteration, suggest a *minimal, low-risk* tweak that keeps the current solution's core intact—no architecture overhauls or fundamental methodology changes.  
+      Think: a feature-engineering twist, a lightweight data-augmentation trick, or hyperparameter changes.  
+      Check the MEMORY section first and avoid duplicating earlier ideas. 
+      {% elif improve_complexity == 'normal' %}
+      In this iteration, propose a *moderate upgrade* that builds on the baseline without deviating dramatically.  
+      Options include (but not limited to) hyper-parameter tuning, a small ensemble of similar models, a sturdier preprocessing pipeline, feature engineering improvements, and data augmentation.  
+      Check the MEMORY section first and avoid duplicating earlier ideas.
+      {% elif improve_complexity == 'complex' %}
+      In this iteration, recommend a *substantial extension* that pushes the method's boundaries while preserving its core logic.  
+      Consider advanced ensembling/stacking, fine-tuning specialized pre-trained models, or exhaustive hyper-parameter searches.  
+      Check the MEMORY section first and avoid duplicating earlier ideas.
+      {% endif %}
+
+      **RESPONSE FORMAT FOR IMPLEMENTATION**: 
+      Provide a **SINGLE** Markdown code block (wrapped in ```) containing a **SELF-CONTAINED** Python script that:
+      1. Implements the idea **END-TO-END**
+      2. **PRINTS THE 5-FOLD CROSS-VALIDATION** score of the evaluation metric
+      3. **SAVES THE TEST PREDICTIONS** in a `submission.csv` file in the current directory
+      
+      Start by making sure you understand the task, the data and compute resources and the idea. Then generate a detailed implementation plan that will structure and guide you step-by-step through the implementation process. Make sure to reflect on the plan to ensure that the implementation is efficient and faithful to the idea, and that all the requirements (e.g., the evaluation score is printed, the submission file follows the correct format and is saved in the correct location, etc.) are satisfied.
+      For large datasets, avoid for loops and aim for efficient and fast data loading and feature engineering.
+      Format the proposed solution as follows:
+      
+      # Improvement Idea to implement
+      <the proposed improvement idea/plan>
+
+      ```python
+      <the implementation of the proposed improvement>
+      ```
+
+    input_variables:
+      - task_desc
+      - execution_timeout
+      - packages
+      - prev_code
+      - prev_terminal_output
+      - improve_complexity
+      - memory
+      - data_overview

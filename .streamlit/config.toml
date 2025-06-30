@@ -1,0 +1,82 @@
+# .streamlit/config.toml
+
+
+[global]
+
+# Development mode settings
+developmentMode = false
+
+[server]
+# Increase message size to handle complex visualizations (in MB)
+maxMessageSize = 200
+
+# Increase file size upload limit (in MB)
+maxUploadSize = 200
+
+# Configure file watcher for better performance
+# Options: "auto", "poll", "watchdog", or "none"
+fileWatcherType = "watchdog"
+
+# Configure websocket settings
+enableXsrfProtection = true
+enableCORS = true
+enableWebsocketCompression = true
+
+# Optimize caching to prevent unnecessary recalculations
+runOnSave = true
+
+# Set headless mode to reduce browser overhead
+headless = false
+
+# Configure server for better performance
+port = 8501
+baseUrlPath = ""
+# Create a static folder at /Users/edantoledo/Desktop/aira-dojo/dojo/ui/static or disable static serving
+enableStaticServing = false
+
+[browser]
+# Server settings
+serverAddress = "localhost"
+gatherUsageStats = false
+
+# Improve user experience
+serverPort = 8501
+
+[runner]
+# Enable memory management
+magicEnabled = true
+
+# Improve code execution
+fastReruns = true
+
+# Control memory usage and performance
+
+# Optimize memory cleanup
+postScriptGC = true
+
+# Control caching behavior
+
+# Memory management (in MB)
+
+[cache]
+# Increase cache capacity for better performance with trees and files
+
+[client]
+# Improve responsiveness
+
+[theme]
+# Optional theme settings for consistent look
+# Uncomment to customize
+primaryColor = "#4338ca"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
+
+[logger]
+# Reduce logging to improve performance
+level = "error"
+
+[ui]
+# Disable the "deployed with Streamlit" banner
+hideTopBar = true 
