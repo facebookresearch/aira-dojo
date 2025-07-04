@@ -22,7 +22,7 @@ debug_prob: ??? # Probability of running a debug step in the process
 num_drafts: ??? # Number of draft outputs to generate for selection
 max_llm_call_retries: 3 # Maximum number of retries for failed LLM API calls
 
-use_test_score: true # Whether to use the test score for evaluation
+use_test_score: false # Whether to use the test score for evaluation
 use_complexity: false # Whether to consider complexity differences in prompts - only works with certain operators
 
 # --- Environment Configuration ---
