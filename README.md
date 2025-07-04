@@ -1,8 +1,8 @@
 # `aira-dojo`: AI Research Agent DOJO 
 <p align="center">
   <a href="https://creativecommons.org/licenses/by-nc/4.0/deed.en"><img src="https://img.shields.io/badge/license-CC--BY--NC%204.0-lightgrey"/></a>
-  <a href="https://arxiv.org/abs/2308.01285">
-  <img alt="Documentation" src="https://img.shields.io/badge/arXiv-2308.01285-b31b1b.svg">
+  <a href="https://arxiv.org/abs/2507.02554">
+  <img alt="Documentation" src="https://img.shields.io/badge/arXiv-2507.02554-b31b1b.svg">
   </a>
 </p>
 
@@ -153,6 +153,18 @@ python -m dojo.main_runner_job_array +_exp=mlebench/aira_mcts_o3 logger.use_wand
 
 ### Analyse and Visualize Results
 To Visualize results checkout [src/dojo/ui/README](./src/dojo/ui/README.md). To learn how to load and extract the best node of each experiment, checkout [notebooks/analyze_results.ipynb](./notebooks/analyze_results.ipynb).
+
+## Citation
+
+If you found this work useful, please consider citing:
+
+@article{toledo2025airesearchagentsmachine,
+    title={AI Research Agents for Machine Learning: Search, Exploration, and Generalization in MLE-bench}, 
+    author={Edan Toledo and Karen Hambardzumyan and Martin Josifoski and Rishi Hazra and Nicolas Baldwin and Alexis Audran-Reiss and Michael Kuchnik and Despoina Magka and Minqi Jiang and Alisia Maria Lupidi and Andrei Lupu and Roberta Raileanu and Kelvin Niu and Tatiana Shavrina and Jean-Christophe Gagnon-Audet and Michael Shvartsman and Shagun Sodhani and Alexander H. Miller and Abhishek Charnalia and Derek Dunfield and Carole-Jean Wu and Pontus Stenetorp and Nicola Cancedda and Jakob Nicolaus Foerster and Yoram Bachrach},
+    year={2025},
+    journal={arXiv},
+    url={https://arxiv.org/abs/2507.02554}
+}
 
 ## License
 
