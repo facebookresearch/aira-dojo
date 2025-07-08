@@ -152,7 +152,7 @@ job_summary_schema = """{
         },
         "error_text": {
             "type": "string",
-            "description": "The text responsible for indicating an error occured."
+            "description": "The text responsible for indicating an error occurred."
         }
     },
     "required": ["job_name", "experiment_name", "details", "error_category", "is_crashed", "error_text"]

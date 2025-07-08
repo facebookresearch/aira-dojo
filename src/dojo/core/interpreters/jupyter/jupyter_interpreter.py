@@ -77,7 +77,7 @@ class JupyterInterpreter(Interpreter):
             log.info(f"Fetching the file {ppath}")
             assert isinstance(self.code_executor, JupyterCodeExecutor)
             contents = self.code_executor.fetch_file(relative_path)
-            log.info("File succesfully fetched.")
+            log.info("File successfully fetched.")
         except FileNotFoundError:
             log.warning(f"File {ppath} not found in the working directory.")
             return None

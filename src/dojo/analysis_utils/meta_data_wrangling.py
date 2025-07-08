@@ -1676,7 +1676,7 @@ def get_rank_and_percentile(
 
         return {"percentile": percentile, "rank": avg_rank}
     except Exception as e:
-        print(f"Error occured in calculating percentile and rank for Score = {score}: {e}")
+        print(f"Error occurred in calculating percentile and rank for Score = {score}: {e}")
 
 
 def is_lower_better(competition):
