@@ -86,7 +86,7 @@ Examples:
     use_azure_client: False
     ...
   ```
-  Finally, in `.env`, set your primary key to you openai key:
+  Finally, in `.env`, set your primary key to your openai key:
   ```yaml
   PRIMARY_KEY="sk-..." # <---- Set to your OpenAI key>
   ```
