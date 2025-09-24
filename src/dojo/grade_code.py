@@ -1,5 +1,8 @@
 import json
 import sys
+import argparse
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
@@ -10,7 +13,8 @@ from dojo.config_dataclasses.task.mlebench import MLEBenchTaskConfig
 from dojo.utils.config import build
 from dojo.utils.environment import get_mlebench_data_dir
 
-SUPERIMAGE_VERSION = "ENTER YOUR SUPERIMAGE FILE NAME HERE"
+SUPERIMAGE_VERSION = "2025-05-02v2"
+
 
 def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
     code_path = Path(code_file_path)
@@ -19,7 +23,7 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
 
     code_content = code_path.read_text()
     cache_dir = get_mlebench_data_dir()
-    results_output_dir = "/tmp/rad_results"
+    results_output_dir = tempfile.mkdtemp(prefix="rad_results_")
 
     task_config = MLEBenchTaskConfig(
         name=str(task_name),
@@ -33,7 +37,7 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
     )
 
     interpreter_config = JupyterInterpreterConfig(
-        superimage_version="SUPERIMAGE_VERSION",
+        superimage_version=SUPERIMAGE_VERSION,
         timeout=7200,
     )
 
@@ -41,9 +45,9 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
         task = build(task_config, TASK_MAP)
         solver_interpreter = build(interpreter_config, INTERPRETER_MAP, data_dir=task_config.data_dir)
 
-        state, task_info = task.prepare(solver_interpreter=solver_interpreter, eval_interpreter=None)
+        state, _ = task.prepare(solver_interpreter=solver_interpreter, eval_interpreter=None)
 
-        updated_state, eval_result = task.step_task(state, code_content)
+        _, eval_result = task.step_task(state, code_content)
 
         from dojo.core.tasks.constants import EXECUTION_OUTPUT, TEST_FITNESS, VALID_SOLUTION, VALIDATION_FITNESS
 
@@ -83,23 +87,46 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
     finally:
         if "task" in locals() and "state" in locals():
             task.close(state)
+        if results_output_dir and Path(results_output_dir).exists():
+            try:
+                shutil.rmtree(results_output_dir)
+            except Exception as e:
+                print(f"Warning: Failed to cleanup temporary directory {results_output_dir}: {e}", file=sys.stderr)
 
 
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python grade_code.py <code_file_path> <task_name> <output_path>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Grade code submissions for MLEBench")
+    parser.add_argument("code_file_path", type=str, help="Path to the Python code file to grade")
+    parser.add_argument("task_name", type=str, help="Name of the MLEBench task")
+    parser.add_argument("output_path", type=str, help="Path where the grading results will be saved")
 
-    code_file_path = sys.argv[1]
-    task_name = sys.argv[2]
-    output_path = sys.argv[3]
+    args = parser.parse_args()
 
-    result = execute_code(code_file_path, task_name)
+    # Validate inputs before starting
+    if not Path(args.code_file_path).is_file():
+        parser.error(f"Code file not found: {args.code_file_path}")
+
+    try:
+        cache_dir = get_mlebench_data_dir()
+        if not cache_dir:
+            parser.error("MLEBench data directory not found. Please ensure MLEBench is properly configured.")
+    except Exception as e:
+        parser.error(f"Error accessing MLEBench: {e}")
+
+    # Create output directory if it doesn't exist
+    output_path = Path(args.output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"Grading {args.code_file_path} for task {args.task_name}...")
+    result = execute_code(args.code_file_path, args.task_name)
 
     with open(output_path, "w") as f:
         json.dump(result, f, indent=2)
 
-    print(f"Results saved to {output_path}")
+    if result.get("error"):
+        print(f"\nError during grading: {result['error']}")
+
+    print(f"\nFull results saved to {output_path}")
 
 
 if __name__ == "__main__":
