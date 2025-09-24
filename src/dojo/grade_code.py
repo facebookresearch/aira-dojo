@@ -16,20 +16,20 @@ from dojo.utils.environment import get_mlebench_data_dir
 SUPERIMAGE_VERSION = "2025-05-02v2"
 
 
-def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
+def execute_code(code_file_path: str, task_name: str, timeout_hours: float = 2.0) -> Dict[str, Any]:
     code_path = Path(code_file_path)
     if not code_path.exists():
         raise FileNotFoundError(f"Code file not found: {code_file_path}")
 
     code_content = code_path.read_text()
     cache_dir = get_mlebench_data_dir()
-    results_output_dir = tempfile.mkdtemp(prefix="rad_results_")
+    tmp_dir = tempfile.mkdtemp(prefix="rad_results_")
 
     task_config = MLEBenchTaskConfig(
         name=str(task_name),
         benchmark="mlebench",
         cache_dir=str(cache_dir),
-        results_output_dir=str(results_output_dir),
+        results_output_dir=str(tmp_dir),
         public_dir=str(f"{cache_dir}/{task_name}/prepared/public"),
         private_dir=str(f"{cache_dir}/{task_name}/prepared/private"),
         data_dir=str(f"{cache_dir}/{task_name}/prepared/public/"),
@@ -37,8 +37,7 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
     )
 
     interpreter_config = JupyterInterpreterConfig(
-        superimage_version=SUPERIMAGE_VERSION,
-        timeout=7200,
+        superimage_version=SUPERIMAGE_VERSION, timeout=int(timeout_hours * 60 * 60), working_dir=tmp_dir
     )
 
     try:
@@ -52,7 +51,7 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
         from dojo.core.tasks.constants import EXECUTION_OUTPUT, TEST_FITNESS, VALID_SOLUTION, VALIDATION_FITNESS
 
         exec_output = eval_result.get(EXECUTION_OUTPUT)
-        print(exec_output)
+
         summary = {
             "success": False,
             "exit_code": None,
@@ -73,7 +72,7 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
             summary["error_output"] = exec_output.term_err if hasattr(exec_output, "term_err") else []
             summary["stdout"] = exec_output.term_out if hasattr(exec_output, "term_out") else []
 
-        grading_report_path = Path(results_output_dir) / "grading_report.json"
+        grading_report_path = Path(tmp_dir) / "grading_report.json"
         if grading_report_path.exists():
             with open(grading_report_path, "r") as f:
                 grading_report = json.load(f)
@@ -87,11 +86,11 @@ def execute_code(code_file_path: str, task_name: str) -> Dict[str, Any]:
     finally:
         if "task" in locals() and "state" in locals():
             task.close(state)
-        if results_output_dir and Path(results_output_dir).exists():
+        if tmp_dir and Path(tmp_dir).exists():
             try:
-                shutil.rmtree(results_output_dir)
+                shutil.rmtree(tmp_dir)
             except Exception as e:
-                print(f"Warning: Failed to cleanup temporary directory {results_output_dir}: {e}", file=sys.stderr)
+                print(f"Warning: Failed to cleanup temporary directory {tmp_dir}: {e}", file=sys.stderr)
 
 
 def main():
@@ -99,6 +98,9 @@ def main():
     parser.add_argument("code_file_path", type=str, help="Path to the Python code file to grade")
     parser.add_argument("task_name", type=str, help="Name of the MLEBench task")
     parser.add_argument("output_path", type=str, help="Path where the grading results will be saved")
+    parser.add_argument(
+        "--timeout", type=float, default=2.0, help="Timeout in hours for code execution (default: %(default)s hours)"
+    )
 
     args = parser.parse_args()
 
@@ -110,6 +112,14 @@ def main():
         cache_dir = get_mlebench_data_dir()
         if not cache_dir:
             parser.error("MLEBench data directory not found. Please ensure MLEBench is properly configured.")
+
+        task_dir = Path(cache_dir) / args.task_name / "prepared"
+        if not task_dir.exists():
+            parser.error(
+                f"Task '{args.task_name}' not found in MLEBench data directory.\n"
+                f"Expected to find: {task_dir}\n"
+                f"Available tasks: {', '.join(d.name for d in Path(cache_dir).iterdir() if (d / 'prepared').exists())}"
+            )
     except Exception as e:
         parser.error(f"Error accessing MLEBench: {e}")
 
@@ -118,7 +128,7 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"Grading {args.code_file_path} for task {args.task_name}...")
-    result = execute_code(args.code_file_path, args.task_name)
+    result = execute_code(args.code_file_path, args.task_name, args.timeout)
 
     with open(output_path, "w") as f:
         json.dump(result, f, indent=2)
