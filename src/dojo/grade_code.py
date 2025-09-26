@@ -16,7 +16,7 @@ from dojo.utils.environment import get_mlebench_data_dir
 SUPERIMAGE_VERSION = "2025-05-02v2"
 
 
-def execute_code(code_file_path: str, task_name: str, timeout_hours: float = 2.0) -> Dict[str, Any]:
+def execute_code(code_file_path: str, task_name: str, timeout_hours: float = 4.0) -> Dict[str, Any]:
     code_path = Path(code_file_path)
     if not code_path.exists():
         raise FileNotFoundError(f"Code file not found: {code_file_path}")
@@ -99,7 +99,7 @@ def main():
     parser.add_argument("task_name", type=str, help="Name of the MLEBench task")
     parser.add_argument("output_path", type=str, help="Path where the grading results will be saved")
     parser.add_argument(
-        "--timeout", type=float, default=2.0, help="Timeout in hours for code execution (default: %(default)s hours)"
+        "--timeout", type=float, default=4.0, help="Timeout in hours for code execution (default: %(default)s hours)"
     )
 
     args = parser.parse_args()
