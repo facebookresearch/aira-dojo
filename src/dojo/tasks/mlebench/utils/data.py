@@ -43,6 +43,10 @@ def extract_all_from_path(
     def extract(file: Path, dst: Path) -> None:
         """Extracts a compressed file to the specified destination."""
         # Check if the destination directory already exists
+        if dst.name.endswith(".json") or dst.name.endswith(".csv") or dst.name.endswith(".txt"):
+            logger.info(f"Adjusting destination from {dst} to {dst.parent}")
+            dst = dst.parent
+            
         try:
             if file.suffix == ".7z":
                 with py7zr.SevenZipFile(file, mode="r") as ref:
@@ -87,6 +91,8 @@ def extract_all_from_path(
 
         path = dst
 
+    if not path.is_dir():
+        return
     to_extract = {fpath for fpath in set(path.iterdir()) - already_extracted if is_compressed(fpath)}
     already_extracted.update(to_extract)
     for fpath in to_extract:
