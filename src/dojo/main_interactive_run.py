@@ -8,6 +8,7 @@ This script allows vendors to:
 
 Note: Uses imports from facebookresearch/aira-dojo (public repo)
 """
+import json
 from pathlib import Path
 from dojo.config_dataclasses.task import TASK_MAP # this is still mlebench unless we add airabench to __init__.py
 from dojo.config_dataclasses.interpreter import INTERPRETER_MAP
@@ -15,6 +16,7 @@ from dojo.utils.config import build
 from dojo.config_dataclasses.task.airabench import AiraBenchTaskConfig
 from dojo.config_dataclasses.interpreter.jupyter import JupyterInterpreterConfig
 from omegaconf import II
+import tempfile
 
 # ===== CONFIGURATION =====
 
@@ -187,12 +189,46 @@ print("="*60)
 task.close(state)
 print("Done!")
 
-# ===== NEXT STEPS =====
+# ===== GRADE THE SOLUTION =====
 
 print("\n" + "="*60)
-print("Next Steps")
+print("Grading the Solution")
 print("="*60)
-print(f"1. Check submission file at: {DATA_DIR}/submission.csv")
-print(f"2. You can now run grade_code.py on the submission:")
-print(f"   python grade_code.py {DATA_DIR}/submission.csv")
-print("="*60)
+
+from dojo.core.tasks.constants import EXECUTION_OUTPUT, TEST_FITNESS, VALID_SOLUTION, VALIDATION_FITNESS
+tmp_dir = tempfile.mkdtemp(prefix="rad_results_")
+
+exec_output = outcome.get(EXECUTION_OUTPUT)
+
+summary = {
+    "success": False,
+    "exit_code": None,
+    "timed_out": False,
+    "exec_time": None,
+    # validation/test/valid flags are stored in the outcome dict, not on ExecutionResult
+    "valid_solution": outcome.get(VALID_SOLUTION, False),
+    "validation_fitness": outcome.get(VALIDATION_FITNESS),
+    "test_fitness": outcome.get(TEST_FITNESS),
+    "error_output": [],
+    "stdout": [],
+}
+
+if exec_output is not None:
+    summary["success"] = exec_output.exit_code == 0 and not exec_output.timed_out
+    summary["exit_code"] = exec_output.exit_code
+    summary["timed_out"] = exec_output.timed_out
+    summary["exec_time"] = exec_output.exec_time
+    # ExecutionResult exposes term_out; term_err may not exist on all implementations
+    summary["error_output"] = getattr(exec_output, "term_err", []) or []
+    summary["stdout"] = getattr(exec_output, "term_out", []) or []
+
+    grading_report_path = Path(tmp_dir) / "grading_report.json"
+    if grading_report_path.exists():
+        with open(grading_report_path, "r") as f:
+            grading_report = json.load(f)
+        summary["grading_report"] = grading_report
+
+print("Grading Summary:")
+for k, v in summary.items():
+    print(f"{k}: {v}")
+
