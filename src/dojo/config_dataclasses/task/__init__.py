@@ -5,5 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 
 from dojo.tasks.mlebench.task import MLEBenchTask
+from dojo.tasks.airabench.task import AiraBenchTask
 
-TASK_MAP = {"MLEBenchTaskConfig": MLEBenchTask}
+TASK_MAP = {
+    "MLEBenchTaskConfig": MLEBenchTask,
+    "AiraBenchTaskConfig": AiraBenchTask,
+}

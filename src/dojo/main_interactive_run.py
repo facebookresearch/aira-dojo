@@ -20,7 +20,7 @@ from omegaconf import II
 
 # TODO: Path to the task folder in aira-bench-data (make sure this is mapped in Apptainer)
 # Example: "{path_to_aira-bench-data_repo}/aira-bench-data/text_only_tasks/rad/batch_3/TextClassificationWnliCaAccuracy"
-TASK_FOLDER_PATH = "/home/munaaghamelu/AnnotationTask/aira-bench-data/text_only_tasks/rad/batch_4/TimeSeriesForecastingCovidDeathsMAE"
+TASK_FOLDER_PATH = "~/AnnotationTask/aira-bench-data/text_only_tasks/rad/batch_4/TimeSeriesForecastingCovidDeathsMAE"
 
 # Path to the data directory where the vendor will write outputs
 # This is where submission.csv will be created
@@ -28,7 +28,7 @@ DATA_DIR = II("get_tmp_dir:train_data")
 
 # Rather than global shared datasets directory, use the dataset directory accessible to the vendor
 # Path to global shared datasets (used by prepare.py)
-GLOBAL_SHARED_DATA_DIR = "/home/munaaghamelu/AnnotationTask/aira-bench-data/datasets/airs_text_vendor"
+GLOBAL_SHARED_DATA_DIR = "~/AnnotationTask/aira-bench-data/datasets/airs_text_vendor"
 
 # Apptainer superimage version (use the version shipped with MLEBench)
 SUPERIMAGE_VERSION = "2025-05-02v2"
@@ -41,7 +41,6 @@ TIMEOUT = 7200
 task_config = AiraBenchTaskConfig(
     name=Path(TASK_FOLDER_PATH).name,  # Extract task name from folder path
     benchmark="airabench",
-    task_dir=TASK_FOLDER_PATH,  # Path to the task folder with prepare.py and evaluate.py
     data_dir=DATA_DIR,  # Where the agent can read/write data
     eval_data_dir=DATA_DIR,  # Same as data_dir for evaluation
     global_shared_data_dir=GLOBAL_SHARED_DATA_DIR,  # Raw datasets location
