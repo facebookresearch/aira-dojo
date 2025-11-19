@@ -1,0 +1,23 @@
+# @package _global_
+defaults:
+  - override /benchmark: mlebench/three_tasks
+  - override /interpreter: jupyter
+  - override /solver: mlebench/sa_ucb
+  - override /solver/client@solver.operators.analyze.llm.client: gdm
+  - override /solver/client@solver.operators.debug.llm.client: gdm
+  - override /solver/client@solver.operators.draft.llm.client: gdm
+  - override /solver/client@solver.operators.improve.llm.client: gdm
+  - override /solver/client@solver.operators.promise_scorer.llm.client: gdm
+  - override /solver/client@solver.operators.novelty_scorer.llm.client: gdm
+
+launcher:
+  qos: lowest
+
+metadata:
+  git_issue_id: sa_ucb_experiment # Experiment for SA-UCB solver testing
+
+solver:
+  step_limit: 2
+
+vars:
+  metadata.seed: [1,2,3]

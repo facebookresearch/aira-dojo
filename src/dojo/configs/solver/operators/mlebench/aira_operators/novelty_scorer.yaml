@@ -1,0 +1,87 @@
+defaults:
+  - /solver/client@novelty_scorer.llm.client: gdm
+
+novelty_scorer:
+  _target_: dojo.config_dataclasses.operators.base.OperatorConfig
+  llm:
+    _target_: dojo.config_dataclasses.llm.generic_llm.GenericLLMConfig
+    client: ???
+    generation_kwargs:
+      temperature: 0.3  # Lower temperature for more consistent scoring
+  system_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |-
+      You are an expert machine learning engineer and Kaggle Grandmaster with deep expertise in evaluating solution diversity.
+
+      Your task is to evaluate how NOVEL and DIVERSE a proposed solution is compared to other sibling solutions.
+
+      A novel solution is one that:
+      1. **Explores different aspects** - tackles a different part of the problem space
+      2. **Uses different methods** - employs different algorithms, architectures, or techniques
+      3. **Has unique features** - incorporates different feature engineering or data processing
+      4. **Tries different strategies** - uses different optimization, regularization, or ensembling approaches
+      5. **Adds value through diversity** - complements existing solutions rather than duplicating them
+
+      **Important**:
+      - Novelty is NOT about complexity - a simple but different approach is highly novel
+      - Compare the solution against its siblings to assess how different it is
+      - If there are no siblings, or if this is the first solution, give it moderate novelty
+      - Diversity is valuable for exploration - we want to try different approaches
+      - Minor variations of the same core approach should get lower novelty scores
+
+      Return a JSON object with:
+      - `novelty_score`: A float between 0.0 and 1.0 indicating how novel this solution is
+        - 0.0-0.2: Very low novelty (nearly identical to siblings)
+        - 0.2-0.4: Low novelty (minor variations on sibling approaches)
+        - 0.4-0.6: Moderate novelty (some differences but similar core approach)
+        - 0.6-0.8: High novelty (significantly different approach or methods)
+        - 0.8-1.0: Very high novelty (explores completely new direction)
+      - `reasoning`: A brief explanation (2-3 sentences) of why you gave this score, mentioning how it differs from siblings
+
+    input_variables: []
+
+  init_user_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |-
+      # TASK DESCRIPTION
+      ```
+      {{task_desc}}
+      ```
+
+      # SOLUTION TO EVALUATE
+
+      ## Plan/Idea
+      ```
+      {{plan}}
+      ```
+
+      ## Code Implementation (truncated)
+      ```python
+      {{code}}
+      ```
+
+      # SIBLING SOLUTIONS (for comparison)
+
+      {% if num_siblings > 0 %}
+      Here are the other sibling solutions that share the same parent node:
+
+      {{sibling_plans}}
+
+      Total siblings: {{num_siblings}}
+      {% else %}
+      This is the first solution with this parent - no siblings to compare against.
+      {% endif %}
+
+      Please evaluate how novel and diverse this solution is compared to its siblings, and return your assessment as JSON.
+
+    input_variables:
+      - task_desc
+      - plan
+      - code
+      - sibling_plans
+      - num_siblings
+
+  user_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: ""
+    input_variables: []

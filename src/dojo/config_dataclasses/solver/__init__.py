@@ -5,7 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 from dojo.solvers.greedy import Greedy
-from dojo.solvers.mcts import MCTS
+from dojo.solvers.mcts import MCTS, SA_UCB
 from dojo.solvers.evo import Evolutionary
 
-SOLVER_MAP = {"GreedySolverConfig": Greedy, "MCTSSolverConfig": MCTS, "EvolutionarySolverConfig": Evolutionary}
+SOLVER_MAP = {
+    "GreedySolverConfig": Greedy,
+    "MCTSSolverConfig": MCTS,
+    "EvolutionarySolverConfig": Evolutionary,
+    "SA_UCBSolverConfig": SA_UCB,
+}

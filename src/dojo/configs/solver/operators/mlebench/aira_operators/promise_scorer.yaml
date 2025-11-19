@@ -1,0 +1,83 @@
+defaults:
+  - /solver/client@promise_scorer.llm.client: gdm
+
+promise_scorer:
+  _target_: dojo.config_dataclasses.operators.base.OperatorConfig
+  llm:
+    _target_: dojo.config_dataclasses.llm.generic_llm.GenericLLMConfig
+    client: ???
+    generation_kwargs:
+      temperature: 0.3  # Lower temperature for more consistent scoring
+  system_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |-
+      You are an expert machine learning engineer and Kaggle Grandmaster with deep expertise in evaluating solution approaches.
+
+      Your task is to evaluate how PROMISING a proposed solution approach is for a machine learning competition task.
+
+      A promising solution is one that:
+      1. **Uses appropriate methods** for the task type (e.g., deep learning for images, gradient boosting for tabular data)
+      2. **Has solid theoretical foundation** - the approach makes sense given the problem structure
+      3. **Includes proper evaluation** - uses appropriate cross-validation and metrics
+      4. **Handles data properly** - appropriate preprocessing, feature engineering, or data augmentation
+      5. **Is feasible** - can be implemented and trained with available resources
+      6. **Has good potential** - similar approaches have worked well on similar problems
+
+      Consider both the PLAN/IDEA and the CODE IMPLEMENTATION when scoring.
+
+      **Important**:
+      - Be objective and analytical in your assessment
+      - Consider both theoretical soundness and practical implementation quality
+      - A simple but well-executed approach can be highly promising
+      - A complex approach with flaws may have lower promise
+
+      Return a JSON object with:
+      - `promise_score`: A float between 0.0 and 1.0 indicating how promising this solution is
+        - 0.0-0.3: Low promise (major flaws, inappropriate methods, or unlikely to work)
+        - 0.3-0.5: Moderate promise (some issues but could work with improvements)
+        - 0.5-0.7: Good promise (solid approach with minor concerns)
+        - 0.7-0.9: High promise (excellent approach, well-suited to the task)
+        - 0.9-1.0: Exceptional promise (state-of-the-art methods, outstanding implementation)
+      - `reasoning`: A brief explanation (2-3 sentences) of why you gave this score
+
+    input_variables: []
+
+  init_user_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: |-
+      # TASK DESCRIPTION
+      ```
+      {{task_desc}}
+      ```
+
+      # PROPOSED SOLUTION
+
+      ## Plan/Idea
+      ```
+      {{plan}}
+      ```
+
+      ## Code Implementation (truncated)
+      ```python
+      {{code}}
+      ```
+
+      {% if parent_plan %}
+      ## Parent Approach (for context)
+      ```
+      {{parent_plan}}
+      ```
+      {% endif %}
+
+      Please evaluate how promising this solution approach is and return your assessment as JSON.
+
+    input_variables:
+      - task_desc
+      - plan
+      - code
+      - parent_plan
+
+  user_message_prompt_template:
+    _target_: dojo.config_dataclasses.llm.jinjaprompt.JinjaPromptConfig
+    template: ""
+    input_variables: []
