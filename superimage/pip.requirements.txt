@@ -9,7 +9,7 @@ bayesian-optimization
 bayespy==0.5.1
 biopython
 # AIDE requirements
-black==24.3.0
+black==26.3.1
 catboost
 contractions
 coolname>=2.2.0
