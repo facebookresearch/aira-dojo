@@ -80,7 +80,7 @@ pytorch-lightning
 pytz
 PyYAML
 rank_bm25
-requests==2.32.4
+requests==2.33.0
 rich==13.7.0
 scikeras
 scikit-image
