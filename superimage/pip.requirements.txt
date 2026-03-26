@@ -96,7 +96,7 @@ shutup==0.2.0
 sklearn-pandas
 spacey
 statsmodels
-streamlit==1.40.2
+streamlit==1.54.0
 sympy
 tenacity==9.0.0
 tensorpack
