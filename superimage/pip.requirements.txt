@@ -74,7 +74,7 @@ pydicom
 pyocr
 pyparsing
 PyPDF
-pytest==7.4.3
+pytest==9.0.3
 python-dotenv
 pytorch-lightning
 pytz
